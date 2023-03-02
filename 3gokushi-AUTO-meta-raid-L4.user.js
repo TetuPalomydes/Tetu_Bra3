@@ -12,7 +12,7 @@
 // @grant	GM_getValue
 // @grant	GM_setValue
 // @grant	GM_deleteValue
-// 更新履歴　2023.03.02　取り急ぎワールドの暴走対応+☆2と☆3を無視する仕様に変更
+// 更新履歴　2023.03.02　取り急ぎワールドの暴走対応
 // ==/UserScript==
 
 
@@ -191,7 +191,7 @@ $.extend( TargetBusho.prototype,{
 		this.deadline = deadline;
 		this.link = $(".Battle_detail a");
 //		if(type === "知力戦" && hpmax >= 6000000)this.target = 1;
-		if(hpmax <= 200001)this.target = 1;  //レアのHP変更により変える必要ありそう
+		if(hpmax <= 4000000)this.target = 0;  //レアのHP変更により変える必要ありそう
 	},
 });
 
