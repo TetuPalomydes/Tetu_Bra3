@@ -1599,7 +1599,7 @@ console.log("time up!");
 					var scope;
 					if(cloadData('meta-raid_target_world',0,1)) scope=3; else scope=2 ;
 					//ここでターゲットを探してあったら遷移
-					self.autoPager2("/card/event_battle_top.php?p=1&scope="+scope,battle_type01 , battle_type02, owner_battle_Flg);
+					self.autoPager2("/card/event_battle_top.php?p=1&filter_hp=2&scope="+scope,battle_type01 , battle_type02, owner_battle_Flg);
 
 				}else {
 					//自分の殴り中へ遷移してみる
