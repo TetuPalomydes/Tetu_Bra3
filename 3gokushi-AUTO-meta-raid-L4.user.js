@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           3gokushi-AUTO-meta-raid-L4
 // @description    ブラウザ三国志でレイドが捗るかもしれないツール_☆4以下固定
-// @version        2.2.0.6L4
+// @version        2.3.0.0
 // @namespace      3gokushi-AUTO-meta
 // @include        http://*.3gokushi.jp/*
 // @include        https://*.3gokushi.jp/*
@@ -12,6 +12,7 @@
 // @grant	GM_getValue
 // @grant	GM_setValue
 // @grant	GM_deleteValue
+// 更新履歴　2023.03.02　取り急ぎワールドの暴走対応+☆2と☆3を無視する仕様に変更
 // ==/UserScript==
 
 
@@ -140,7 +141,7 @@ var TargetBusho = function( element ) {
 	this.analyze( element );
 };
 $.extend( TargetBusho.prototype,{
-	dmyhp: 0,
+	dmyhp: 200000,
 	hprem: 200000,
 	hpmax: 200000,
 	dmyjn: 0,
@@ -1642,7 +1643,7 @@ console.log("raid_limit_hprem:"+cloadData("meta-raid_limit_hprem",200000,1));
 console.log("raid_target_world:"+cloadData("meta-raid_target_world",0,1));
 
 								if(c.atk == 3 && cur_stamina < cloadData('meta-raid_rem_stamina',10,1)-0)auto_flg = 0;
-							 return (c.atk>0 && (c.hprem-0 < cloadData('meta-raid_limit_hprem',200000,1)-0 || c.bonus-0 >= cloadData('meta-raid_limit_bonus',0,1)-0) && auto_flg) ;
+							 return (c.atk>0 && (c.hprem-0 <= cloadData('meta-raid_limit_hprem',200000,1)-0 || c.bonus-0 >= cloadData('meta-raid_limit_bonus',0,1)-0) && auto_flg) ;
 							});
 							if (targetBusyo_02.length > 0) {
 								//戦闘画面に遷移
@@ -1927,7 +1928,7 @@ console.log("raid_target_world:"+cloadData("meta-raid_target_world",0,1));
 
 			}
 			// 残り攻撃回数がある場合は、200%か参戦人数20人以上の場合に殴る
-			else if((remain>0) && ((bonus>=cloadData('meta-raid_limit_bonus',150,1)-0)||(cloadData("meta-raid_target_world",0,1))||hprem<=cloadData('meta-raid_limit_hprem',200001,1)-0)) {
+			else if((remain>0)&&((bonus>=cloadData('meta-raid_limit_bonus',150,1)-0)||(cloadData("meta-raid_target_world",0,1))||hprem<=cloadData('meta-raid_limit_hprem',200001,1)-0)) {
 				var card = deck.getReccomend(type);
 				var 	eid = $('#entry_id').val();
 
