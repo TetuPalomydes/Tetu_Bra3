@@ -141,8 +141,8 @@ var TargetBusho = function( element ) {
 };
 $.extend( TargetBusho.prototype,{
 	dmyhp: 0,
-	hprem: 0,
-	hpmax: 0,
+	hprem: 200000,
+	hpmax: 200000,
 	dmyjn: 0,
 	join : 0,
 	dmyat: 0,
@@ -190,7 +190,7 @@ $.extend( TargetBusho.prototype,{
 		this.deadline = deadline;
 		this.link = $(".Battle_detail a");
 //		if(type === "知力戦" && hpmax >= 6000000)this.target = 1;
-		if(hpmax >= 200000)this.target = 1;  //レアのHP変更により変える必要ありそう
+		if(hpmax <= 200001)this.target = 1;  //レアのHP変更により変える必要ありそう
 	},
 });
 
@@ -1596,7 +1596,7 @@ console.log("time up!");
 				if ($('.npcBusho').size()<max_Battle && cur_stamina >= cloadData('meta-raid_rem_stamina',10,1)-0) {
 
 					var scope;
-					if(cloadData('meta-raid_target_world',0,1)) scope=4; else scope=4 ;
+					if(cloadData('meta-raid_target_world',0,1)) scope=3; else scope=2 ;
 					//ここでターゲットを探してあったら遷移
 					self.autoPager2("/card/event_battle_top.php?p=1&scope="+scope,battle_type01 , battle_type02, owner_battle_Flg);
 
