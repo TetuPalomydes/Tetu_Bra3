@@ -1927,7 +1927,7 @@ console.log("raid_target_world:"+cloadData("meta-raid_target_world",0,1));
 
 			}
 			// 残り攻撃回数がある場合は、200%か参戦人数20人以上の場合に殴る
-			else if( ( remain > 0  ) && (( bonus >= cloadData('meta-raid_limit_bonus',0,1)-0  ) || (cloadData("meta-raid_target_world",0,1)) || hprem <= cloadData('meta-raid_limit_hprem',200000,1)-0)) {
+			else if((remain>0) && ((bonus>=cloadData('meta-raid_limit_bonus',150,1)-0)||(cloadData("meta-raid_target_world",0,1))||hprem<=cloadData('meta-raid_limit_hprem',200001,1)-0)) {
 				var card = deck.getReccomend(type);
 				var 	eid = $('#entry_id').val();
 
