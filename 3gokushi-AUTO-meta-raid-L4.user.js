@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           3gokushi-AUTO-meta-raid-L4
 // @description    ブラウザ三国志でレイドが捗るかもしれないツール_☆4以下固定
-// @version        2.3.0.0
+// @version        2.3.0.1
 // @namespace      3gokushi-AUTO-meta
 // @include        http://*.3gokushi.jp/*
 // @include        https://*.3gokushi.jp/*
@@ -141,9 +141,9 @@ var TargetBusho = function( element ) {
 	this.analyze( element );
 };
 $.extend( TargetBusho.prototype,{
-	dmyhp: 200000,
-	hprem: 200000,
-	hpmax: 200000,
+	dmyhp: 0,
+	hprem: 0,
+	hpmax: 0,
 	dmyjn: 0,
 	join : 0,
 	dmyat: 0,
@@ -191,7 +191,7 @@ $.extend( TargetBusho.prototype,{
 		this.deadline = deadline;
 		this.link = $(".Battle_detail a");
 //		if(type === "知力戦" && hpmax >= 6000000)this.target = 1;
-		if(hpmax <= 4000000)this.target = 0;  //レアのHP変更により変える必要ありそう
+		if(hpmax = 200000)this.target = 1;  //レアのHP変更により変える必要ありそう
 	},
 });
 
