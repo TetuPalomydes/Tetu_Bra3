@@ -42,7 +42,7 @@ function createSelectBox(name, options) {
 }
 
 // 資源・NPC探索設定のリンク要素を取得
-var linkElement = document.querySelector('#search_resource_setting');
+var linkElement = document.evaluate('/html/body/div[3]/div[3]/div[2]/div[2]/div[1]/div[3]/div/ul[1]/li[6]/a', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 if (linkElement) {
     var parentElement = linkElement.parentElement; // リンク要素の親要素を取得
     var radioButton1 = createRadioButton('unit_type', '318', '戦斧兵');
