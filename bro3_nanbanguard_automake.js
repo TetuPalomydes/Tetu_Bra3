@@ -12,6 +12,7 @@
 //【使い方】
 //プロフで設定＞軍議所の南蛮ページを開けば自動装填
 //そのまま軍議所の南蛮ページで放置すると毎時見に行く
+//自動OKは危なっかしいので封印　128～135行　と　149行目の // を削除すれば自動でOKを押す
 
 // ラジオボタンを作成する関数
 function createRadioButton(name, value, label) {
@@ -124,14 +125,14 @@ const xpath = '/html/body/div[3]/div[3]/div[2]/div[2]/div[1]/div[3]/div/div[3]/d
 const buttonElement = findElementByXPath(xpath);
 
 // OKボタンをクリックする関数
-function clickOkButton() {
-    var okButton = document.getElementById('b3_dialog_input_ok');
-    if (okButton) {
-        okButton.click();
-    } else {
-        console.error('OKボタンが見つかりませんでした。');
-    }
-}
+//function clickOkButton() {
+//    var okButton = document.getElementById('b3_dialog_input_ok');
+//    if (okButton) {
+//        okButton.click();
+//    } else {
+//        console.error('OKボタンが見つかりませんでした。');
+//    }
+//}
 
 // ラジオボタンとセレクトボックスの値を指定して自動化手順を実行する関数
 function automateProcessWithOkButton(unitValue, selectValue) {
@@ -145,7 +146,7 @@ function automateProcessWithOkButton(unitValue, selectValue) {
     clickElement(buttonElement);
 
     // OKボタンをクリック
-    clickOkButton();
+ //   clickOkButton();
 }
 
 // ユニットとセレクトボックスの値を取得
