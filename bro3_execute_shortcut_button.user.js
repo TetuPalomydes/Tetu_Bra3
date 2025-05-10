@@ -13,27 +13,42 @@
 
 const subdomain = window.location.hostname.split('.')[0]; // サブドメイン取得
 
-// 新しいボタンを作成
-window.onload = function() {
-  createCustomButton("武将戦7", `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=1007`);
-  createCustomButton("武将戦20", `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=1020`);
-  createCustomButton("部隊戦5", `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=2005`);
-  createCustomButton("部隊戦12", `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=2012`);
-  createCustomButton("同盟戦7", `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=4007`);
-};
+const buttonData = [
+  { name: "武将戦7", url: `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=1007` },
+  { name: "武将戦20", url: `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=1020` },
+  { name: "部隊戦5", url: `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=2005` },
+  { name: "部隊戦12", url: `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=2012` },
+  { name: "同盟戦7", url: `https://${subdomain}.3gokushi.jp/npc_expedition/index.php?stage_id=4007` }
+];
 
-// 新しい関数
-function createCustomButton(name, url) {
-  const button = document.createElement("button");
-  button.textContent = name;
-  button.style.marginRight = "10px";
-  button.classList.add("same-league");
-  button.onclick = function() {
-    window.location.href = url;
-  };
-
-  const northBtn = document.querySelector(".btn_help");
-  if (northBtn) {
-    northBtn.parentNode.insertBefore(button, northBtn);
-  }
+function clearExistingButtons() {
+  buttonData.forEach(({ name }) => {
+    document.querySelectorAll(`button[data-name="${name}"]`).forEach(btn => btn.remove());
+  });
 }
+
+function createButtons() {
+  buttonData.forEach(({ name, url }) => {
+    if (document.querySelector(`button[data-name="${name}"]`)) return;
+
+    const button = document.createElement("button");
+    button.textContent = name;
+    button.style.marginRight = "10px";
+    button.classList.add("same-league");
+    button.setAttribute("data-name", name);
+    button.onclick = () => {
+      window.location.href = url;
+    };
+
+    const northBtn = document.querySelector(".btn_help");
+    if (northBtn) {
+      northBtn.parentNode.insertBefore(button, northBtn);
+    }
+  });
+}
+
+// 0.5秒ごとにボタンの再描画
+setInterval(() => {
+  clearExistingButtons();
+  createButtons();
+}, 500);
