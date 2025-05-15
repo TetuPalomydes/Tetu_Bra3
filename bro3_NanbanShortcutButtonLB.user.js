@@ -97,6 +97,6 @@ function addButtons() {
   setInterval(function() {
     clearExistingButtons();
     addButtons();
-  }, 500); // 0.5秒ごとに更新
+  }, 5000); // 5秒ごとに更新
 
 })();
