@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  「Cのみ」の横に「10TP出品」と「期限が表示された分」チェックボックスを追加
-// @include      https://w1.3gokushi.jp/card/trade.php*
+// @include      https://*.3gokushi.jp/card/trade.php*
 // @grant        none
 // ==/UserScript==
 
