@@ -1,4 +1,4 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name        bro3_nanbanguard_automake
 // @description 南蛮衛兵自動装填（1時間毎確認）
 // @include     https://*.3gokushi.jp/user/
@@ -6,13 +6,14 @@
 // @exclude     http*://*.3gokushi.jp/maintenance*
 // @grant       none
 // @author      tetu
-// @version     0.1
+// @version     0.2
 // ==/UserScript==
-
 //【使い方】
 //プロフで設定＞軍議所の南蛮ページを開けば自動装填
-//そのまま軍議所の南蛮ページで放置すると毎時見に行く
-//自動OKは危なっかしいので封印 128～135行 と 149行目の // を削除すれば自動でOKを押すようになります。
+// 兵種の選択はプロフ画面でも可能となっております。
+
+// 安全処理用のフラグ
+let isAutomationAllowed = false;
 
 // ラジオボタンを作成する関数
 function createRadioButton(name, value, label) {
@@ -42,7 +43,7 @@ function createSelectBox(name, options) {
     return select;
 }
 
-// 資源・NPC探索設定のリンク要素を取得
+// データ削除のリンク要素を取得
 var linkElement = document.evaluate('/html/body/div[3]/div[3]/div[2]/div[2]/div[1]/div[3]/div/ul[1]/li[6]/a', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 if (linkElement) {
     var parentElement = linkElement.parentElement; // リンク要素の親要素を取得
@@ -124,18 +125,66 @@ function clickElement(element) {
 const xpath = '/html/body/div[3]/div[3]/div[2]/div[2]/div[1]/div[3]/div/div[3]/div/div[2]/table/tbody/tr[7]/td/input';
 const buttonElement = findElementByXPath(xpath);
 
-// OKボタンをクリックする関数
-//function clickOkButton() {
-//    var okButton = document.getElementById('b3_dialog_input_ok');
-//    if (okButton) {
-//        okButton.click();
-//    } else {
-//        console.error('OKボタンが見つかりませんでした。');
-//    }
-//}
+// OKボタンをクリックする関数（安全処理付き）
+function clickOkButton() {
+    var okButton = document.getElementById('b3_dialog_input_ok');
+    if (okButton && isAutomationAllowed) {
+        okButton.click();
+        // OKを押した直後に許可を解除
+        isAutomationAllowed = false;
+    } else if (!isAutomationAllowed) {
+        // 自動化が許可されていない場合は何もしない
+    } else {
+        console.error('OKボタンが見つかりませんでした。');
+    }
+}
+
+// 満タン状態をチェックする関数
+function isCapacityFull() {
+    // 複数の方法で満タン状態をチェック
+    
+    // 方法1: すべてのp要素をチェック
+    var pElements = document.querySelectorAll('p');
+    for (var i = 0; i < pElements.length; i++) {
+        if (pElements[i].textContent.includes('登庸できる上限数に達しています')) {
+            console.log('満タン状態を検出しました (p要素)');
+            return true;
+        }
+    }
+    
+    // 方法2: すべてのdiv要素もチェック
+    var divElements = document.querySelectorAll('div');
+    for (var i = 0; i < divElements.length; i++) {
+        if (divElements[i].textContent.includes('登庸できる上限数に達しています')) {
+            console.log('満タン状態を検出しました (div要素)');
+            return true;
+        }
+    }
+    
+    // 方法3: body全体のテキストをチェック
+    if (document.body.textContent.includes('登庸できる上限数に達しています')) {
+        console.log('満タン状態を検出しました (body全体)');
+        return true;
+    }
+    
+    console.log('満タン状態は検出されませんでした');
+    return false;
+}
 
 // ラジオボタンとセレクトボックスの値を指定して自動化手順を実行する関数
 function automateProcessWithOkButton(unitValue, selectValue) {
+    // 満タン状態をチェック
+    if (isCapacityFull()) {
+        console.log('登庸上限に達しているため、自動化処理をスキップします');
+        return;
+    }
+
+    // 必要な要素が存在するかチェック
+    if (!buttonElement) {
+        console.log('ボタン要素が見つからないため、自動化処理をスキップします');
+        return;
+    }
+
     // ラジオボタンをクリック
     clickRadioButtonWithValue(unitValue);
 
@@ -145,8 +194,15 @@ function automateProcessWithOkButton(unitValue, selectValue) {
     // ボタンをクリック
     clickElement(buttonElement);
 
-    // OKボタンをクリック
- //   clickOkButton();
+    // ダイアログが出る直前に許可を設定（少し遅延を入れる）
+    setTimeout(function() {
+        isAutomationAllowed = true;
+        
+        // OKボタンをクリック（さらに少し遅延）
+        setTimeout(function() {
+            clickOkButton();
+        }, 100); // 100ms後にOKボタンをクリック
+    }, 500); // 500ms後に許可を設定
 }
 
 // ユニットとセレクトボックスの値を取得
@@ -162,6 +218,6 @@ function reloadPageAfterOneHour() {
          location.reload();
      }, 3600000); // 3600000ミリ秒 = 1時間
  }
- 
+
  // 関数を呼び出して一時間後にリロードをスケジュールする
  reloadPageAfterOneHour();
