@@ -2,8 +2,8 @@
 // @name         bro3_NaiseiPlus
 // @namespace    bro3_NaiseiPlus
 // @description  内政画面の武将切り替え動作をワンクリックにするツール
-// @version      1.0
-// @include      httpS://*.3gokushi.jp/card/domestic_setting*
+// @version      1.01
+// @include      https://*.3gokushi.jp/card/domestic_setting*
 // @include      http://*.3gokushi.jp/card/domestic_setting*
 // @grant        none
 // ==/UserScript==
@@ -19,80 +19,92 @@
     }
 
     function initNaiseiPlus() {
-        // 内政設定画面かどうかを確認
-        if (!document.querySelector('form[name="input_domestic"]') && !document.querySelector('.domesticGeneralListTbl')) {
-            return;
-        }
-
-        // 確認ダイアログを無効化（内政解除用）
+        // 確認ダイアログを無効化
         disableConfirmDialogs();
 
-        addQuickChangeRadioButtons();
+        // 初期化処理
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(init, 500);
+            });
+        } else {
+            setTimeout(init, 500);
+        }
+    }
 
-        // ページ読み込み時にデッキ下げ処理があるかチェック
-        checkDeckDropAction();
+    function init() {
+        // スクロール位置復元処理
+        restoreScrollPosition();
+        
+        // 武将選択用のラジオボタンを追加
+        addQuickChangeRadioButtons();
     }
 
     function disableConfirmDialogs() {
-        // 確認ダイアログ関数を無効化
-        if (typeof window.confirmOnClick === 'function') {
-            window.confirmOnClick = function() { return true; };
+        // 確認ダイアログを無効化
+        if (typeof window.confirm === 'function') {
+            const originalConfirm = window.confirm;
+            window.confirm = function(message) {
+                // 内政関連の確認は自動でOK
+                if (message && (message.includes('内政') || message.includes('変更'))) {
+                    return true;
+                }
+                return originalConfirm.call(window, message);
+            };
         }
-
-        // 元のconfirm関数も保存して無効化
-        if (!window.originalConfirm) {
-            window.originalConfirm = window.confirm;
-        }
-        window.confirm = function() { return true; };
     }
 
     function addQuickChangeRadioButtons() {
-        // 武将テーブルを全て取得（複数のテーブルがある場合に対応）
-        const domesticTables = document.querySelectorAll('.domesticGeneralListTbl');
-        if (domesticTables.length === 0) return;
-
-        // 現在内政中の武将情報を取得
+        // 現在の内政官情報を取得
         const currentDomesticInfo = getCurrentDomesticInfo();
 
-        // 内政中の武将がいる場合、上のテーブルの左側にボタンを追加
+        // 内政解除＋デッキ下げボタンを追加
         if (currentDomesticInfo.isSet) {
-            addDomesticReleaseAndDeckDropButton(currentDomesticInfo);
+            addDomesticReleaseButton(currentDomesticInfo);
         }
 
-        // 各テーブルを処理
-        domesticTables.forEach(domesticTable => {
-            // 武将行を取得して処理
-            const generalRows = domesticTable.querySelectorAll('tr');
-
-            generalRows.forEach((row, index) => {
-                // ヘッダー行はスキップ
-                if (index === 0) return;
-
-                // 選択列（最初の列）のみを対象とする
-                const selectCell = row.querySelector('td:first-child');
-                if (!selectCell) return;
-
-                // スキル列かどうかをチェック（スキル列には追加しない）
-                if (selectCell.classList.contains('skill') ||
-                    selectCell.querySelector('.skill') ||
-                    selectCell.textContent.includes('LV') ||
-                    selectCell.querySelector('a[href*="skill"]')) {
-                    return;
-                }
-
+        // すべてのテーブルを検索して武将を探す
+        const tables = document.querySelectorAll('table');
+        
+        tables.forEach(table => {
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
                 // 武将情報を取得
                 const generalInfo = getGeneralInfoFromRow(row);
-                if (!generalInfo) return;
-
-                // 内政官設定用のラジオボタンを追加（内政中でない武将のみ）
-                addNaiseiRadioButton(selectCell, generalInfo, currentDomesticInfo);
+                
+                // 内政設定可能な武将で、内政中でない場合
+                if (generalInfo && generalInfo.canSetDomestic && !generalInfo.isDomesticActive) {
+                    // 「選択」列を探す
+                    const selectCell = findSelectCell(row);
+                    if (selectCell) {
+                        addNaiseiRadioButton(selectCell, generalInfo, currentDomesticInfo);
+                    }
+                }
             });
         });
+    }
 
-        // 説明を追加（最初のテーブルの前に）
-        if (domesticTables.length > 0) {
-            addInstructionPanel(domesticTables[0]);
+    function findSelectCell(row) {
+        const cells = row.querySelectorAll('td, th');
+        
+        // 「選択」という文字が含まれるセルを探す
+        for (let i = 0; i < cells.length; i++) {
+            const cell = cells[i];
+            if (cell.textContent && cell.textContent.trim().includes('選択')) {
+                return cell;
+            }
         }
+        
+        // ラジオボタンがあるセルを探す
+        for (let i = 0; i < cells.length; i++) {
+            const cell = cells[i];
+            if (cell.querySelector('input[type="radio"]')) {
+                return cell;
+            }
+        }
+        
+        return null;
     }
 
     function getCurrentDomesticInfo() {
@@ -129,7 +141,6 @@
         }
 
         // 内政中の武将の場合（小虎など）
-        // 「内政中」というテキストがある場合
         if (row.textContent.includes('内政中')) {
             // 武将カードのリンクからIDを抽出
             const cardLink = row.querySelector('a[href*="cardWindow_"]');
@@ -165,114 +176,79 @@
     }
 
     function addNaiseiRadioButton(selectCell, generalInfo, currentDomesticInfo) {
-        // 内政中の武将の場合は何も追加しない
-        if (generalInfo.isDomesticActive) {
+        // 既存のボタンがあるかチェック
+        if (selectCell.querySelector('.naisei-radio-container')) {
             return;
         }
 
-        // 内政設定可能な武将（関銀屏など）にのみラジオボタンを追加
-        if (generalInfo.canSetDomestic) {
-            // 内政官設定用のコンテナを作成
-            const naiseiContainer = document.createElement('div');
-            naiseiContainer.style.cssText = `
-                margin-top: 8px;
-                padding: 5px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                background: #ffe6e6;
-            `;
+        // ラジオボタンのコンテナを作成
+        const naiseiContainer = document.createElement('div');
+        naiseiContainer.className = 'naisei-radio-container';
+        naiseiContainer.style.cssText = `
+            margin-top: 8px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            text-align: center;
+        `;
 
-            // ラジオボタンを作成
-            const naiseiRadio = document.createElement('input');
-            naiseiRadio.type = 'radio';
-            naiseiRadio.name = 'naisei_quick_select';
-            naiseiRadio.value = generalInfo.id;
-            naiseiRadio.id = 'naisei_radio_' + generalInfo.id;
-            naiseiRadio.checked = false;
+        // ラジオボタンを作成
+        const naiseiRadio = document.createElement('input');
+        naiseiRadio.type = 'radio';
+        naiseiRadio.name = 'naisei_quick_change';
+        naiseiRadio.value = generalInfo.id;
+        naiseiRadio.id = 'naisei_radio_' + generalInfo.id;
+        naiseiRadio.style.cssText = `
+            width: 18px;
+            height: 18px;
+            margin-right: 5px;
+            vertical-align: middle;
+            accent-color: #4169e1;
+            border: 2px solid #ff6666;
+            border-radius: 50%;
+            cursor: pointer;
+        `;
 
-            // ラジオボタンのスタイル設定（互換性向上版）
-            const radioStyle = [
-                'width: 18px',
-                'height: 18px',
-                'margin-right: 5px',
-                'cursor: pointer',
-                '-webkit-appearance: none',
-                '-moz-appearance: none',
-                'appearance: none',
-                'border: 2px solid #ff6666',
-                'border-radius: 50%',
-                'background: #ffffff',
-                'position: relative',
-                '-webkit-transform: scale(1.2)',
-                '-moz-transform: scale(1.2)',
-                '-ms-transform: scale(1.2)',
-                'transform: scale(1.2)'
-            ].join('; ');
-            
-            naiseiRadio.style.cssText = radioStyle;
+        // ラベルを作成
+        const naiseiLabel = document.createElement('label');
+        naiseiLabel.htmlFor = 'naisei_radio_' + generalInfo.id;
+        naiseiLabel.textContent = '内政官に変更';
+        naiseiLabel.style.cssText = `
+            color: #4169e1;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            vertical-align: middle;
+        `;
 
-            // ホバー効果を追加
-            naiseiRadio.addEventListener('mouseenter', function() {
-                this.style.background = '#ffcccc';
-                this.style.webkitTransform = 'scale(1.3)';
-                this.style.mozTransform = 'scale(1.3)';
-                this.style.msTransform = 'scale(1.3)';
-                this.style.transform = 'scale(1.3)';
-            });
-
-            naiseiRadio.addEventListener('mouseleave', function() {
-                this.style.background = '#ffffff';
-                this.style.webkitTransform = 'scale(1.2)';
-                this.style.mozTransform = 'scale(1.2)';
-                this.style.msTransform = 'scale(1.2)';
-                this.style.transform = 'scale(1.2)';
-            });
-
-            // ラベルを作成
-            const naiseiLabel = document.createElement('label');
-            naiseiLabel.htmlFor = 'naisei_radio_' + generalInfo.id;
-            naiseiLabel.style.cssText = `
-                font-size: 12px;
-                font-weight: bold;
-                cursor: pointer;
-                color: #4169e1;
-            `;
-            naiseiLabel.textContent = '内政官に変更';
-
-            // クリックイベントを追加
-            naiseiRadio.addEventListener('change', function() {
-                if (this.checked) {
-                    handleNaiseiChange(generalInfo, currentDomesticInfo);
-                }
-            });
-
-            naiseiLabel.addEventListener('click', function(e) {
-                e.preventDefault();
-                naiseiRadio.checked = true;
+        // クリックイベントを追加
+        naiseiRadio.addEventListener('change', function() {
+            if (this.checked) {
+                // スクロール位置を保存
+                saveScrollPosition(generalInfo.id);
+                
                 handleNaiseiChange(generalInfo, currentDomesticInfo);
-            });
+            }
+        });
 
-            // コンテナに追加
-            naiseiContainer.appendChild(naiseiRadio);
-            naiseiContainer.appendChild(naiseiLabel);
-
-            // セルに追加
-            selectCell.appendChild(naiseiContainer);
-        }
+        // コンテナに追加
+        naiseiContainer.appendChild(naiseiRadio);
+        naiseiContainer.appendChild(naiseiLabel);
+        selectCell.appendChild(naiseiContainer);
     }
 
-    function addDomesticReleaseAndDeckDropButton(currentInfo) {
+    function addDomesticReleaseButton(currentInfo) {
         // 既存の内政解除ボタンを探す
         const originalReleaseButton = document.querySelector('input[type="submit"][value="設定されている武将を解除する"]');
         if (!originalReleaseButton) return;
 
-        // 「内政」タイトル部分をシンプルに探す
+        // 「内政」タイトル部分を探す
         let domesticTitle = null;
 
-        // まずは一般的なタイトル要素を探す
+        // タイトル要素を探す
         const titleElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, .title, .header, th');
-        for (let i = 0; i < titleElements.length; i++) {
-            const element = titleElements[i];
+        for (const element of titleElements) {
             if (element.textContent && element.textContent.trim() === '内政') {
                 domesticTitle = element;
                 break;
@@ -282,8 +258,7 @@
         // 見つからない場合は全要素から探す
         if (!domesticTitle) {
             const allElements = document.querySelectorAll('*');
-            for (let i = 0; i < allElements.length; i++) {
-                const element = allElements[i];
+            for (const element of allElements) {
                 if (element.textContent && element.textContent.trim() === '内政' &&
                     element.children.length === 0) {
                     domesticTitle = element;
@@ -303,30 +278,23 @@
 
         // ボタンを作成
         const releaseButton = originalReleaseButton.cloneNode(true);
-        
-        // ボタンスタイル（互換性向上版）
-        const buttonStyle = [
-            'background: linear-gradient(to bottom, #ff6b6b, #ee5a52)',
-            'color: white',
-            'border: 1px solid #ff4757',
-            'padding: 3px 6px',
-            'font-size: 12px',
-            'font-weight: bold',
-            'border-radius: 3px',
-            'cursor: pointer',
-            'box-shadow: 0 1px 2px rgba(0,0,0,0.2)',
-            'white-space: nowrap',
-            'position: absolute',
-            'left: 5px',
-            'top: 50%',
-            '-webkit-transform: translateY(-50%)',
-            '-moz-transform: translateY(-50%)',
-            '-ms-transform: translateY(-50%)',
-            'transform: translateY(-50%)',
-            'z-index: 10'
-        ].join('; ');
-        
-        releaseButton.style.cssText = buttonStyle;
+        releaseButton.style.cssText = `
+            background: linear-gradient(to bottom, #ff6b6b, #ee5a52);
+            color: white;
+            border: 1px solid #ff4757;
+            padding: 3px 6px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 3px;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            position: absolute;
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        `;
 
         // ホバー効果
         releaseButton.addEventListener('mouseenter', function() {
@@ -342,7 +310,7 @@
             e.preventDefault();
             e.stopPropagation();
 
-            // 確認ダイアログとconfirmOnClick関数を無効化
+            // 確認ダイアログを無効化
             const originalConfirm = window.confirm;
             const originalConfirmOnClick = window.confirmOnClick;
 
@@ -354,13 +322,10 @@
                 const form = originalReleaseButton.form;
                 if (form) {
                     // onclickイベントを一時的に削除
-                    const originalOnclick = originalReleaseButton.onclick;
                     originalReleaseButton.onclick = null;
 
                     // フォームのaction URLを直接取得して移動
                     const formAction = form.action;
-                    
-                    // FormData/URLSearchParams互換性対応
                     const formElements = form.elements;
                     const params = [];
                     
@@ -386,7 +351,7 @@
             }
         });
 
-        // タイトルコンテナにボタンを追加（絶対位置で重ねる）
+        // タイトルコンテナにボタンを追加
         titleContainer.appendChild(releaseButton);
     }
 
@@ -397,10 +362,10 @@
         }
 
         // 確認ダイアログを削除し、直接処理実行
-        executeNaiseiChange(generalInfo.id, currentInfo);
+        executeNaiseiChange(generalInfo.id);
     }
 
-    function executeNaiseiChange(newGeneralId, currentInfo) {
+    function executeNaiseiChange(newGeneralId) {
         // 既存のラジオボタンをチェック状態にする
         const targetRadio = document.querySelector('input[type="radio"][name="id"][value="' + newGeneralId + '"]');
         if (targetRadio) {
@@ -420,32 +385,84 @@
         window.location.href = setUrl;
     }
 
-    function addInstructionPanel(domesticTable) {
-        // 説明パネルを作成
-        const instructionPanel = document.createElement('div');
-        instructionPanel.style.cssText = `
-            background: #e8f4fd;
-            border: 1px solid #4169e1;
-            border-radius: 6px;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 12px;
-            color: #2c5aa0;
-        `;
-
-        instructionPanel.innerHTML = `
-            <strong>🔧 内政官クイック変更</strong><br>
-            内政設定可能な武将の「選択」欄にある <span style="color: #4169e1;">●内政官に変更</span> をクリックすると、ワンクリックで内政官を変更できます。<br>
-        `;
-
-        // テーブルの前に挿入
-        domesticTable.parentElement.insertBefore(instructionPanel, domesticTable);
+    // スクロール位置を保存する関数
+    function saveScrollPosition(generalId) {
+        try {
+            const scrollInfo = {
+                scrollY: window.scrollY || window.pageYOffset || document.documentElement.scrollTop,
+                scrollX: window.scrollX || window.pageXOffset || document.documentElement.scrollLeft,
+                generalId: generalId,
+                timestamp: Date.now()
+            };
+            
+            sessionStorage.setItem('naisei_scroll_position', JSON.stringify(scrollInfo));
+        } catch (e) {
+            // エラーは無視
+        }
     }
 
-    // ページ読み込み時にデッキ下げ処理があるかチェック
-    function checkDeckDropAction() {
-        // デッキ下げ機能は削除
-        return;
+    // スクロール位置を復元する関数
+    function restoreScrollPosition() {
+        try {
+            const savedScrollInfo = sessionStorage.getItem('naisei_scroll_position');
+            if (!savedScrollInfo) return;
+
+            const scrollInfo = JSON.parse(savedScrollInfo);
+            
+            // 5分以内の保存データのみ有効
+            if (Date.now() - scrollInfo.timestamp > 5 * 60 * 1000) {
+                sessionStorage.removeItem('naisei_scroll_position');
+                return;
+            }
+            
+            // 少し遅延してからスクロール（DOM構築完了を待つ）
+            setTimeout(function() {
+                // まず対象武将の近くにスクロール
+                scrollToGeneral(scrollInfo.generalId);
+                
+                // その後、保存された正確な位置にスクロール
+                setTimeout(function() {
+                    window.scrollTo(scrollInfo.scrollX, scrollInfo.scrollY);
+                }, 300);
+            }, 200);
+
+            // 使用済みデータを削除
+            sessionStorage.removeItem('naisei_scroll_position');
+            
+        } catch (e) {
+            sessionStorage.removeItem('naisei_scroll_position');
+        }
+    }
+
+    // 特定の武将の近くにスクロールする関数
+    function scrollToGeneral(generalId) {
+        try {
+            // ラジオボタンやテーブル行から武将を探す
+            const targetElements = [
+                document.querySelector('input[type="radio"][name="id"][value="' + generalId + '"]'),
+                document.querySelector('#naisei_radio_' + generalId),
+                ...Array.from(document.querySelectorAll('td')).filter(td => 
+                    td.textContent && td.textContent.includes(generalId))
+            ].filter(el => el);
+
+            if (targetElements.length > 0) {
+                const targetElement = targetElements[0];
+                
+                // 要素の位置を取得
+                const rect = targetElement.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                // 要素が画面中央に来るようにスクロール（少し上にオフセット）
+                const targetY = rect.top + scrollTop - (window.innerHeight / 3);
+                
+                window.scrollTo({
+                    top: Math.max(0, targetY),
+                    behavior: 'smooth'
+                });
+            }
+        } catch (e) {
+            // エラーは無視
+        }
     }
 
 })();
