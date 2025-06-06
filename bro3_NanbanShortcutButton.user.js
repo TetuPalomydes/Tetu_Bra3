@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name        bro3_NanbanShortcutButton
 // @description 南蛮画面にショートカットボタンを追加
-// @version     1.1
+// @version     1.11
 // @include     https://*.3gokushi.jp/npc_assault*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
 // @grant       none
 // ==/UserScript==
 // 2025/05/21 1.1 猛攻編の南蛮衛兵配置設定が関数の競合で動かなくなっていたので修正
+// 2025/06/06 1.11 猛攻編15を追加
 
 (function() {
   'use strict';
@@ -28,6 +29,7 @@
       '猛攻': [
         { name: '猛攻9', npcId: '2009', bgColor: '#de0051', textColor: '#FFFFFF' },
         { name: '猛攻13', npcId: '2013', bgColor: '#de0051', textColor: '#FFFFFF' },
+        { name: '猛攻15', npcId: '2015', bgColor: '#de0051', textColor: '#FFFFFF' },
         { name: '猛攻19', npcId: '2019', bgColor: '#de0051', textColor: '#FFFFFF' },
         { name: '猛攻25', npcId: '2025', bgColor: '#de0051', textColor: '#FFFFFF' },
         { name: '猛攻31', npcId: '2031', bgColor: '#de0051', textColor: '#FFFFFF' }
